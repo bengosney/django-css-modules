@@ -56,6 +56,9 @@ so `collectstatic` collects and deploys it automatically — nothing extra to sh
 time it's read from the filesystem (the collected `STATIC_ROOT` copy, or the build dir). In
 `DEBUG`, CSS is compiled on demand — no build step needed.
 
+Minification defaults to on in production and off under `DEBUG` (readable output). Override it
+explicitly with `LIGHTNINGCSS_MODULES = {..., "minify": True/False}`.
+
 ## Known limitations
 
 - **External `@import` inside a module isn't bundled yet.** If a `*.module.css` file itself

@@ -45,9 +45,30 @@ def test_defaults_and_targets_coercion(settings, tmp_path):
     settings.LIGHTNINGCSS_MODULES = {"dirs": [tmp_path], "targets": "last 2 versions"}
     cfg = get_settings()
     assert cfg.output == "cssmodules"
-    assert cfg.minify is True
     assert cfg.dashed_idents is False
     assert cfg.targets == ("last 2 versions",)
+
+
+def test_minify_defaults_off_in_debug(settings, tmp_path):
+    settings.DEBUG = True
+    settings.LIGHTNINGCSS_MODULES = {"dirs": [tmp_path]}
+    assert get_settings().minify is False
+
+
+def test_minify_defaults_on_without_debug(settings, tmp_path):
+    settings.DEBUG = False
+    settings.LIGHTNINGCSS_MODULES = {"dirs": [tmp_path]}
+    assert get_settings().minify is True
+
+
+def test_minify_explicit_overrides_debug(settings, tmp_path):
+    settings.DEBUG = True
+    settings.LIGHTNINGCSS_MODULES = {"dirs": [tmp_path], "minify": True}
+    assert get_settings().minify is True
+
+    settings.DEBUG = False
+    settings.LIGHTNINGCSS_MODULES = {"dirs": [tmp_path], "minify": False}
+    assert get_settings().minify is False
 
 
 # --- discovery ----------------------------------------------------------

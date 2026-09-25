@@ -14,7 +14,7 @@ _DEFAULTS = {
     "suffix": DEFAULT_SUFFIX,
     "output": "cssmodules",
     "output_root": None,
-    "minify": True,
+    "minify": None,  # None = auto: minify unless DEBUG
     "targets": None,
     "pattern": None,
     "dashed_idents": False,
@@ -74,12 +74,16 @@ def get_settings() -> ModuleSettings:
     if not suffix or not isinstance(suffix, str):
         raise ImproperlyConfigured(f"{SETTING_NAME}['suffix'] must be a non-empty string.")
 
+    # Default: minify in production, skip it in DEBUG for readable output.
+    minify = raw.get("minify", _DEFAULTS["minify"])
+    minify = (not getattr(settings, "DEBUG", False)) if minify is None else bool(minify)
+
     return ModuleSettings(
         dirs=tuple(Path(d) for d in dirs),
         suffix=suffix,
         output=raw.get("output", _DEFAULTS["output"]),
         output_root=Path(output_root) if output_root else None,
-        minify=bool(raw.get("minify", _DEFAULTS["minify"])),
+        minify=minify,
         targets=tuple(targets) if targets else None,
         pattern=raw.get("pattern", _DEFAULTS["pattern"]),
         dashed_idents=bool(raw.get("dashed_idents", _DEFAULTS["dashed_idents"])),
