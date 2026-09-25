@@ -3,9 +3,20 @@
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
+from lightningcss_django import discovery
 from lightningcss_django.conf import get_settings
 from lightningcss_django.discovery import discover_modules, resolve_module
 from lightningcss_django.exceptions import CssModuleNotFoundError
+
+
+def fake_app(monkeypatch, path):
+    """Make ``apps.get_app_configs()`` report a single app rooted at ``path``."""
+
+    class FakeConfig:
+        pass
+
+    FakeConfig.path = str(path)
+    monkeypatch.setattr(discovery.apps, "get_app_configs", lambda: [FakeConfig()])
 
 
 def write(path, text=".a { color: red; }"):
@@ -23,8 +34,19 @@ def test_missing_setting_raises(settings):
         get_settings()
 
 
-def test_dirs_required(settings):
+def test_dirs_or_app_dirs_required(settings):
     settings.LIGHTNINGCSS_MODULES = {"minify": True}
+    with pytest.raises(ImproperlyConfigured):
+        get_settings()
+
+
+def test_app_dirs_alone_is_allowed(settings):
+    settings.LIGHTNINGCSS_MODULES = {"app_dirs": ["static"]}
+    assert get_settings().app_dirs == ("static",)
+
+
+def test_single_string_app_dirs_rejected(settings):
+    settings.LIGHTNINGCSS_MODULES = {"app_dirs": "static"}
     with pytest.raises(ImproperlyConfigured):
         get_settings()
 
@@ -130,3 +152,50 @@ def test_resolve_module(settings, tmp_path):
 
     with pytest.raises(CssModuleNotFoundError):
         resolve_module("nope.module.css")
+
+
+# --- app_dirs -----------------------------------------------------------
+
+
+def test_app_dirs_scans_each_app_static(settings, tmp_path, monkeypatch):
+    app = tmp_path / "myapp"
+    write(app / "static" / "myapp" / "card.module.css")  # namespaced, as convention advises
+    fake_app(monkeypatch, app)
+    settings.LIGHTNINGCSS_MODULES = {"app_dirs": ["static"]}
+
+    modules = discover_modules()
+    assert modules == {"myapp/card.module.css": app / "static" / "myapp" / "card.module.css"}
+
+
+def test_app_dirs_multiple_subdirs(settings, tmp_path, monkeypatch):
+    app = tmp_path / "myapp"
+    write(app / "css" / "b.module.css")
+    write(app / "styles" / "c.module.css")
+    write(app / "static" / "ignored.module.css")  # not listed -> ignored
+    fake_app(monkeypatch, app)
+    settings.LIGHTNINGCSS_MODULES = {"app_dirs": ["css", "styles"]}
+
+    assert set(discover_modules()) == {"b.module.css", "c.module.css"}
+
+
+def test_dirs_and_app_dirs_combine(settings, tmp_path, monkeypatch):
+    project = tmp_path / "assets"
+    write(project / "page.module.css")
+    app = tmp_path / "myapp"
+    write(app / "static" / "myapp" / "card.module.css")
+    fake_app(monkeypatch, app)
+    settings.LIGHTNINGCSS_MODULES = {"dirs": [project], "app_dirs": ["static"]}
+
+    assert set(discover_modules()) == {"page.module.css", "myapp/card.module.css"}
+
+
+def test_collision_between_dir_and_app_dir_raises(settings, tmp_path, monkeypatch):
+    project = tmp_path / "assets"
+    write(project / "card.module.css")
+    app = tmp_path / "myapp"
+    write(app / "static" / "card.module.css")  # same key -> clash
+    fake_app(monkeypatch, app)
+    settings.LIGHTNINGCSS_MODULES = {"dirs": [project], "app_dirs": ["static"]}
+
+    with pytest.raises(ImproperlyConfigured):
+        discover_modules()

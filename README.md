@@ -61,11 +61,13 @@ explicitly with `LIGHTNINGCSS_MODULES = {..., "minify": True/False}`.
 
 ## Configuration
 
-All settings live in the `LIGHTNINGCSS_MODULES` dict. Only `dirs` is required.
+All settings live in the `LIGHTNINGCSS_MODULES` dict. At least one of `dirs` or `app_dirs`
+is required.
 
 ```python
 LIGHTNINGCSS_MODULES = {
-    "dirs": [BASE_DIR / "assets"],  # required
+    "dirs": [BASE_DIR / "assets"],  # at least one of dirs / app_dirs
+    "app_dirs": ["static"],  # sub-dirs scanned inside every installed app
     "suffix": ".module.css",
     "output": "cssmodules",
     "output_root": BASE_DIR / ".lightningcss_build",
@@ -79,7 +81,8 @@ LIGHTNINGCSS_MODULES = {
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `dirs` | *(required)* | Directories scanned for module source files. Multiple dirs share one key space; a duplicate relative key across dirs is an error. |
+| `dirs` | `[]` | Explicit directories scanned for module source files. Multiple dirs share one key space; a duplicate relative key across dirs is an error. Required unless `app_dirs` is set. |
+| `app_dirs` | `[]` | Like `dirs`, but resolved inside every installed app: a list of sub-directory names, each scanned as `<app>/<name>/` (e.g. `["static"]`). Namespace files (`static/<app>/…`) to avoid key clashes between apps. |
 | `suffix` | `".module.css"` | Filename suffix that marks a file as a module. |
 | `output` | `"cssmodules"` | Sub-directory (under `output_root`) for compiled CSS, the bundle, and the manifest. Also the URL prefix. |
 | `output_root` | first `STATICFILES_DIRS` entry | Filesystem dir the compiled output is written under. Use a dir **outside** `STATICFILES_DIRS` when using the finder (or it's collected twice). |

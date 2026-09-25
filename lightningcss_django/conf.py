@@ -11,6 +11,7 @@ SETTING_NAME = "LIGHTNINGCSS_MODULES"
 DEFAULT_SUFFIX = ".module.css"
 
 _DEFAULTS = {
+    "app_dirs": (),
     "suffix": DEFAULT_SUFFIX,
     "output": "cssmodules",
     "output_root": None,
@@ -29,6 +30,7 @@ class ModuleSettings:
     """Validated configuration for the CSS Modules pipeline."""
 
     dirs: tuple[Path, ...]
+    app_dirs: tuple[str, ...] = ()
     suffix: str = DEFAULT_SUFFIX
     output: str = "cssmodules"
     output_root: Path | None = None
@@ -57,11 +59,18 @@ def get_settings() -> ModuleSettings:
             f"Unknown {SETTING_NAME} keys: {', '.join(sorted(unknown))}. Valid keys: {', '.join(sorted(_KNOWN_KEYS))}."
         )
 
-    dirs = raw.get("dirs")
-    if not dirs:
-        raise ImproperlyConfigured(f"{SETTING_NAME}['dirs'] must list at least one directory.")
+    dirs = raw.get("dirs") or []
     if isinstance(dirs, (str, Path)):
         raise ImproperlyConfigured(f"{SETTING_NAME}['dirs'] must be a list of directories, not a single path.")
+
+    app_dirs = raw.get("app_dirs") or []
+    if isinstance(app_dirs, (str, Path)):
+        raise ImproperlyConfigured(
+            f"{SETTING_NAME}['app_dirs'] must be a list of sub-directory names, not a single string."
+        )
+
+    if not dirs and not app_dirs:
+        raise ImproperlyConfigured(f"{SETTING_NAME} needs at least one of 'dirs' or 'app_dirs'.")
 
     targets = raw.get("targets", _DEFAULTS["targets"])
     if isinstance(targets, str):
@@ -80,6 +89,7 @@ def get_settings() -> ModuleSettings:
 
     return ModuleSettings(
         dirs=tuple(Path(d) for d in dirs),
+        app_dirs=tuple(app_dirs),
         suffix=suffix,
         output=raw.get("output", _DEFAULTS["output"]),
         output_root=Path(output_root) if output_root else None,

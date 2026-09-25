@@ -2,18 +2,32 @@
 
 from pathlib import Path
 
+from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
 
 from .conf import ModuleSettings, get_settings
 from .exceptions import CssModuleNotFoundError
 
 
+def source_dirs(cfg: ModuleSettings) -> list[Path]:
+    """All directories to scan: explicit ``dirs`` plus each ``app_dirs`` sub-dir per app."""
+    dirs = list(cfg.dirs)
+    if cfg.app_dirs:
+        for config in apps.get_app_configs():
+            for subdir in cfg.app_dirs:
+                candidate = Path(config.path) / subdir
+                if candidate.is_dir():
+                    dirs.append(candidate)
+    return dirs
+
+
 def discover_modules(cfg: ModuleSettings | None = None) -> dict[str, Path]:
     """Return a mapping of ``relative key -> absolute path`` for every module.
 
     A "module" is any file whose name ends with the configured ``suffix``
-    (default ``.module.css``). The key is the path relative to whichever
-    configured directory contains it (POSIX separators), so
+    (default ``.module.css``). Directories come from ``dirs`` and, if enabled,
+    the ``app_dirs`` sub-directory of each installed app. The key is the path
+    relative to whichever directory contains it (POSIX separators), so
     ``{% cssmodule "components/card.module.css" %}`` maps straight onto it.
     Missing directories are skipped; the same key appearing in two directories
     is a configuration error.
@@ -22,7 +36,7 @@ def discover_modules(cfg: ModuleSettings | None = None) -> dict[str, Path]:
     found: dict[str, Path] = {}
     origins: dict[str, Path] = {}
 
-    for source_dir in cfg.dirs:
+    for source_dir in source_dirs(cfg):
         if not source_dir.is_dir():
             continue
         for path in sorted(source_dir.rglob(f"*{cfg.suffix}")):
@@ -49,5 +63,5 @@ def resolve_module(key: str, cfg: ModuleSettings | None = None) -> Path:
         return modules[normalized]
     except KeyError:
         raise CssModuleNotFoundError(
-            f"No CSS module {key!r} found in configured dirs: {', '.join(str(d) for d in cfg.dirs)}."
+            f"No CSS module {key!r} found in: {', '.join(str(d) for d in source_dirs(cfg))}."
         ) from None
