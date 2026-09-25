@@ -40,6 +40,23 @@ def test_unknown_local_name_is_empty(project):
     assert out == "[]"
 
 
+def test_cssdump_filter_from_resolved_map(project):
+    manifest = compile_all()
+    out = render('{% load cssmodules %}{% cssmodule "card.module.css" as card %}{{ card|cssdump }}')
+    exports = manifest["modules"]["card.module.css"]["exports"]
+    assert out.startswith('<pre class="cssdump">') and out.endswith("</pre>")
+    for name in exports:
+        assert name in out
+
+
+def test_cssdump_filter_from_key(project):
+    manifest = compile_all()
+    out = render('{% load cssmodules %}{{ "card.module.css"|cssdump }}')
+    exports = manifest["modules"]["card.module.css"]["exports"]
+    for name in exports:
+        assert name in out
+
+
 def test_cssmodule_url_tag(project):
     compile_all()
     out = render('{% load cssmodules %}{% cssmodule_url "card.module.css" %}')

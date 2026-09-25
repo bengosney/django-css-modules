@@ -10,6 +10,9 @@ Usage::
     <link rel="stylesheet" href="{% cssmodules_bundle_url %}">
 
     <div class="{{ card.container }}">{{ card.title }}</div>
+
+    {# debug: dump a module's local -> compiled class map #}
+    {{ card|cssdump }}
 """
 
 from django import template
@@ -52,6 +55,24 @@ def cssmodule(key):
     (empty by default), matching normal template variable behaviour.
     """
     return get_resolver().classes(key)
+
+
+@register.filter
+def cssdump(value):
+    """Dump a module's ``local -> compiled`` class map for debugging.
+
+    Accepts either a resolved map or a module key, so both of these work::
+
+        {% cssmodule "card.module.css" as card %}{{ card|cssdump }}
+        {{ "card.module.css"|cssdump }}
+
+    Renders a ``<pre>`` block listing the local class names, one per line.
+    """
+    classes = value if isinstance(value, dict) else get_resolver().classes(value)
+    if not classes:
+        return mark_safe('<pre class="cssdump">(no classes)</pre>')
+    lines = "\n".join(conditional_escape(name) for name in classes.keys())
+    return mark_safe(f'<pre class="cssdump">{lines}</pre>')
 
 
 @register.simple_tag
