@@ -9,6 +9,12 @@ from lightningcss_django.resolver import get_resolver
 
 CARD = ".container { padding: 1rem; }\n.title { composes: container; font-weight: bold; }\n"
 
+FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+    "lightningcss_django.finders.CssModulesFinder",
+]
+
 
 def test_compilecssmodules_then_collectstatic(settings, tmp_path):
     src = tmp_path / "src"
@@ -71,3 +77,41 @@ def test_works_with_manifest_static_files_storage(settings, tmp_path):
     collected = tmp_path / "collected"
     assert (collected / url.removeprefix("/static/")).is_file()
     assert (collected / bundle_url.removeprefix("/static/")).is_file()
+
+
+def test_finder_makes_collectstatic_compile(settings, tmp_path):
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "card.module.css").write_text(CARD)
+
+    settings.STATIC_URL = "/static/"
+    settings.STATIC_ROOT = str(tmp_path / "collected")
+    settings.STATICFILES_DIRS = []
+    settings.STATICFILES_FINDERS = FINDERS
+    settings.LIGHTNINGCSS_MODULES = {
+        "dirs": [src],
+        "output_root": str(tmp_path / "build"),  # outside STATICFILES_DIRS
+    }
+
+    # NOTE: no compilecssmodules call — the finder compiles during collectstatic.
+    call_command("collectstatic", interactive=False, verbosity=0)
+
+    collected = tmp_path / "collected"
+    assert (collected / "cssmodules" / "card.module.css").is_file()
+    assert (collected / "cssmodules" / "bundle.css").is_file()
+
+
+def test_finder_find_locates_compiled_file(settings, tmp_path):
+    from django.contrib.staticfiles import finders
+
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "card.module.css").write_text(CARD)
+
+    settings.STATICFILES_DIRS = []
+    settings.STATICFILES_FINDERS = FINDERS
+    settings.LIGHTNINGCSS_MODULES = {"dirs": [src], "output_root": str(tmp_path / "build")}
+
+    found = finders.find("cssmodules/card.module.css")
+    assert found is not None
+    assert found.endswith("cssmodules/card.module.css")

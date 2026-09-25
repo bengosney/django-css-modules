@@ -30,6 +30,30 @@ already-compiled files (with CSS Modules off, so the hashed names are preserved)
 <div class="{{ card.container }}">{{ card.title }}</div>
 ```
 
+## Building the CSS
+
+Two options:
+
+- **Automatic (recommended): compile during `collectstatic`.** Register the finder and point
+  the build output outside `STATICFILES_DIRS`:
+
+  ```python
+  STATICFILES_FINDERS = [
+      "django.contrib.staticfiles.finders.FileSystemFinder",
+      "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+      "lightningcss_django.finders.CssModulesFinder",
+  ]
+  LIGHTNINGCSS_MODULES = {"dirs": [...], "output_root": BASE_DIR / ".lightningcss_build"}
+  ```
+
+  Then `manage.py collectstatic` compiles the modules and collects them in one step.
+
+- **Manual:** run `manage.py compilecssmodules` before `collectstatic` (writes into
+  `output_root`, default `STATICFILES_DIRS[0]`).
+
+Either way, the manifest is written outside the static tree and must be present at runtime
+(it holds the class-name map). In `DEBUG`, CSS is compiled on demand — no build step needed.
+
 ## Known limitations
 
 - **External `@import` inside a module isn't bundled yet.** If a `*.module.css` file itself
