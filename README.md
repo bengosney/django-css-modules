@@ -59,6 +59,36 @@ time it's read from the filesystem (the collected `STATIC_ROOT` copy, or the bui
 Minification defaults to on in production and off under `DEBUG` (readable output). Override it
 explicitly with `LIGHTNINGCSS_MODULES = {..., "minify": True/False}`.
 
+## Configuration
+
+All settings live in the `LIGHTNINGCSS_MODULES` dict. Only `dirs` is required.
+
+```python
+LIGHTNINGCSS_MODULES = {
+    "dirs": [BASE_DIR / "assets"],  # required
+    "suffix": ".module.css",
+    "output": "cssmodules",
+    "output_root": BASE_DIR / ".lightningcss_build",
+    "minify": None,  # None = on in prod, off under DEBUG
+    "targets": [">= 0.25%"],
+    "pattern": "[hash]_[local]",
+    "dashed_idents": False,
+    "manifest_path": None,
+}
+```
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `dirs` | *(required)* | Directories scanned for module source files. Multiple dirs share one key space; a duplicate relative key across dirs is an error. |
+| `suffix` | `".module.css"` | Filename suffix that marks a file as a module. |
+| `output` | `"cssmodules"` | Sub-directory (under `output_root`) for compiled CSS, the bundle, and the manifest. Also the URL prefix. |
+| `output_root` | first `STATICFILES_DIRS` entry | Filesystem dir the compiled output is written under. Use a dir **outside** `STATICFILES_DIRS` when using the finder (or it's collected twice). |
+| `minify` | `None` → on in prod, off under `DEBUG` | Minify output. Set `True`/`False` to force it. |
+| `targets` | `None` | [browserslist](https://github.com/browserslist/browserslist) query (string or list), e.g. `[">= 0.25%"]`. Enables vendor prefixing and transpilation (nesting, `oklab()`, …) for those browsers. Unset = emit modern CSS untouched. |
+| `pattern` | `"[hash]_[local]"` | CSS Modules class-name pattern. Segments: `[hash]`, `[content-hash]`, `[local]`, `[name]`. |
+| `dashed_idents` | `False` | Also scope CSS custom properties (`--foo`). |
+| `manifest_path` | inside the output dir | Override where the manifest JSON is written/read. |
+
 ## Known limitations
 
 - **External `@import` inside a module isn't bundled yet.** If a `*.module.css` file itself
