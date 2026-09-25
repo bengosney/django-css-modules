@@ -7,25 +7,6 @@ from lightningcss_django.exceptions import CssModuleNotFoundError
 from lightningcss_django.manifest import load_manifest, resolve_manifest_path, resolve_output_dir
 from lightningcss_django.resolver import DevResolver, ManifestResolver, get_resolver
 
-CARD = ".container { padding: 1rem; }\n.title { composes: container; font-weight: bold; }\n"
-BUTTON = ".primary { color: rebeccapurple; }\n"
-
-
-@pytest.fixture
-def project(settings, tmp_path):
-    src = tmp_path / "src"
-    (src / "components").mkdir(parents=True)
-    (src / "card.module.css").write_text(CARD)
-    (src / "components" / "button.module.css").write_text(BUTTON)
-    settings.STATIC_URL = "/static/"
-    settings.LIGHTNINGCSS_MODULES = {
-        "dirs": [src],
-        "output_root": tmp_path / "static",
-        "minify": False,
-    }
-    return tmp_path
-
-
 # --- flatten ------------------------------------------------------------
 
 
