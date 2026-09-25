@@ -42,11 +42,10 @@ def test_compilecssmodules_then_collectstatic(settings, tmp_path):
     assert (static_root / "cssmodules" / "card.module.css").is_file()
     assert (static_root / "cssmodules" / "bundle.css").is_file()
 
-    # the manifest lives outside the static tree, so it is NOT collected/served
+    # the manifest rides along with collectstatic (inside the output dir)
     manifest_path = resolve_manifest_path(get_resolver().cfg)
     assert manifest_path.is_file()
-    assert static_root not in manifest_path.parents
-    assert not (static_root / "cssmodules.manifest.json").exists()
+    assert (static_root / "cssmodules" / "manifest.json").is_file()
 
 
 def test_works_with_manifest_static_files_storage(settings, tmp_path):

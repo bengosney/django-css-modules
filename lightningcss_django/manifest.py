@@ -1,7 +1,9 @@
 """Build-time manifest: where compiled CSS lands and the exports map.
 
-The manifest is server-side data used at render time; it is deliberately written
-outside the static tree (default: alongside ``output_root``) so it is not served.
+The manifest is written into the output dir alongside the compiled CSS, so it is
+collected and deployed by ``collectstatic`` like any other static file. At render
+time it is read from the filesystem (the collected ``STATIC_ROOT`` copy if present,
+otherwise the build dir), never over HTTP.
 """
 
 import json
@@ -13,7 +15,7 @@ from django.core.exceptions import ImproperlyConfigured
 from .conf import ModuleSettings
 
 MANIFEST_VERSION = 1
-DEFAULT_MANIFEST_NAME = "cssmodules.manifest.json"
+MANIFEST_NAME = "manifest.json"
 
 # Parsed manifests cached by path, invalidated on file mtime change.
 _cache: dict[str, tuple[float, dict]] = {}
@@ -48,10 +50,22 @@ def resolve_output_dir(cfg: ModuleSettings) -> Path:
 
 
 def resolve_manifest_path(cfg: ModuleSettings) -> Path:
-    """Where the manifest JSON is read from / written to."""
+    """Where the manifest is written (inside the output dir, so it gets collected)."""
     if cfg.manifest_path:
         return Path(cfg.manifest_path)
-    return resolve_output_root(cfg).parent / DEFAULT_MANIFEST_NAME
+    return resolve_output_dir(cfg) / MANIFEST_NAME
+
+
+def _read_candidates(cfg: ModuleSettings) -> list[Path]:
+    """Filesystem locations to look for the manifest at render time, best first."""
+    if cfg.manifest_path:
+        return [Path(cfg.manifest_path)]
+    candidates = []
+    static_root = getattr(settings, "STATIC_ROOT", None)
+    if static_root:  # the copy collectstatic produced (production)
+        candidates.append(Path(static_root) / cfg.output / MANIFEST_NAME)
+    candidates.append(resolve_output_dir(cfg) / MANIFEST_NAME)  # build dir (pre-collect / dev)
+    return candidates
 
 
 def save_manifest(cfg: ModuleSettings, data: dict) -> Path:
@@ -63,24 +77,26 @@ def save_manifest(cfg: ModuleSettings, data: dict) -> Path:
 
 
 def load_manifest(cfg: ModuleSettings) -> dict:
-    path = resolve_manifest_path(cfg)
-    try:
-        mtime = path.stat().st_mtime
-    except FileNotFoundError as exc:
-        raise ImproperlyConfigured(
-            f"CSS modules manifest not found at {path}. Run `manage.py compilecssmodules` "
-            "before serving (or enable DEBUG for on-demand compilation)."
-        ) from exc
+    for path in _read_candidates(cfg):
+        try:
+            mtime = path.stat().st_mtime
+        except FileNotFoundError:
+            continue
 
-    key = str(path)
-    hit = _cache.get(key)
-    if hit is not None and hit[0] == mtime:
-        return hit[1]
+        key = str(path)
+        hit = _cache.get(key)
+        if hit is not None and hit[0] == mtime:
+            return hit[1]
+        with path.open(encoding="utf-8") as fh:
+            data = json.load(fh)
+        _cache[key] = (mtime, data)
+        return data
 
-    with path.open(encoding="utf-8") as fh:
-        data = json.load(fh)
-    _cache[key] = (mtime, data)
-    return data
+    raise ImproperlyConfigured(
+        "CSS modules manifest not found. Run `manage.py compilecssmodules` (or "
+        "`collectstatic` with CssModulesFinder) before serving, or enable DEBUG "
+        "for on-demand compilation."
+    )
 
 
 def clear_cache(**kwargs) -> None:

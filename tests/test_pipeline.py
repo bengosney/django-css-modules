@@ -45,12 +45,13 @@ def test_compile_all_writes_css_bundle_and_manifest(project):
     assert container_class in card["exports"]["title"].split()
 
 
-def test_manifest_written_outside_static_tree(project):
+def test_manifest_written_into_output_dir(project):
     compile_all()
     manifest_path = resolve_manifest_path(get_resolver().cfg)
     out_dir = resolve_output_dir(get_resolver().cfg)
     assert manifest_path.is_file()
-    assert out_dir not in manifest_path.parents  # not served
+    # lives inside the output dir so collectstatic picks it up
+    assert manifest_path.parent == out_dir
 
 
 # --- ManifestResolver (production) --------------------------------------

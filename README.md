@@ -51,8 +51,10 @@ Two options:
 - **Manual:** run `manage.py compilecssmodules` before `collectstatic` (writes into
   `output_root`, default `STATICFILES_DIRS[0]`).
 
-Either way, the manifest is written outside the static tree and must be present at runtime
-(it holds the class-name map). In `DEBUG`, CSS is compiled on demand — no build step needed.
+The manifest (the class-name map) is written into the output dir alongside the compiled CSS,
+so `collectstatic` collects and deploys it automatically — nothing extra to ship. At render
+time it's read from the filesystem (the collected `STATIC_ROOT` copy, or the build dir). In
+`DEBUG`, CSS is compiled on demand — no build step needed.
 
 ## Known limitations
 
