@@ -54,6 +54,15 @@ def test_manifest_written_into_output_dir(project):
     assert manifest_path.parent == out_dir
 
 
+def test_output_dir_has_no_stray_build_files(project):
+    compile_all()
+    out_dir = resolve_output_dir(get_resolver().cfg)
+    names = {p.name for p in out_dir.rglob("*") if p.is_file()}
+    # only real artifacts — no transient bundle entry file left behind
+    assert "_bundle_entry.css" not in names
+    assert names == {"card.module.css", "button.module.css", "bundle.css", "manifest.json"}
+
+
 # --- ManifestResolver (production) --------------------------------------
 
 

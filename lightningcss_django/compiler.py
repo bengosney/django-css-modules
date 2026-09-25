@@ -44,19 +44,25 @@ def compile_source(key: str, path: Path, cfg: ModuleSettings) -> tuple[str, dict
 
 
 def _bundle_dir(directory: Path, keys: list[str], cfg: ModuleSettings) -> str:
-    """Bundle already-compiled files in ``directory`` (imported by ``keys``) into one sheet."""
-    entry = directory / _ENTRY_NAME
-    entry.write_text("".join(f'@import "{key}";\n' for key in keys), encoding="utf-8")
-    try:
-        return rust.bundle_entry(
-            str(entry),
-            minify=cfg.minify,
-            browsers_list=list(cfg.targets) if cfg.targets else None,
+    """Bundle already-compiled files in ``directory`` (imported by ``keys``) into one sheet.
+
+    The ``@import`` entry is written to a system temp dir (with absolute paths to the
+    compiled files), so the build never writes a transient file into ``directory``.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        entry = Path(tmp) / _ENTRY_NAME
+        entry.write_text(
+            "".join(f'@import "{(directory / key).resolve()}";\n' for key in keys),
+            encoding="utf-8",
         )
-    except ValueError as exc:
-        raise CompileError(f"Failed to bundle CSS modules: {exc}") from exc
-    finally:
-        entry.unlink(missing_ok=True)
+        try:
+            return rust.bundle_entry(
+                str(entry),
+                minify=cfg.minify,
+                browsers_list=list(cfg.targets) if cfg.targets else None,
+            )
+        except ValueError as exc:
+            raise CompileError(f"Failed to bundle CSS modules: {exc}") from exc
 
 
 def build_bundle(cfg: ModuleSettings | None = None) -> str:
