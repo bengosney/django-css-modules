@@ -13,6 +13,7 @@ DEFAULT_SUFFIX = ".module.css"
 _DEFAULTS = {
     "suffix": DEFAULT_SUFFIX,
     "output": "cssmodules",
+    "output_root": None,
     "minify": True,
     "targets": None,
     "pattern": None,
@@ -30,6 +31,7 @@ class ModuleSettings:
     dirs: tuple[Path, ...]
     suffix: str = DEFAULT_SUFFIX
     output: str = "cssmodules"
+    output_root: Path | None = None
     minify: bool = True
     targets: tuple[str, ...] | None = None
     pattern: str | None = None
@@ -66,6 +68,7 @@ def get_settings() -> ModuleSettings:
         targets = [targets]
 
     manifest_path = raw.get("manifest_path", _DEFAULTS["manifest_path"])
+    output_root = raw.get("output_root", _DEFAULTS["output_root"])
 
     suffix = raw.get("suffix", _DEFAULTS["suffix"])
     if not suffix or not isinstance(suffix, str):
@@ -75,6 +78,7 @@ def get_settings() -> ModuleSettings:
         dirs=tuple(Path(d) for d in dirs),
         suffix=suffix,
         output=raw.get("output", _DEFAULTS["output"]),
+        output_root=Path(output_root) if output_root else None,
         minify=bool(raw.get("minify", _DEFAULTS["minify"])),
         targets=tuple(targets) if targets else None,
         pattern=raw.get("pattern", _DEFAULTS["pattern"]),
