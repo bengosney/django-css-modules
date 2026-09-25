@@ -11,6 +11,10 @@ from .manifest import MANIFEST_VERSION, resolve_output_dir, save_manifest
 BUNDLE_NAME = "bundle.css"
 
 
+def _bundle_entry(key: str, code: str) -> str:
+    return f"/* {key} */\n{code}"
+
+
 def flatten_exports(exports: dict) -> dict[str, str]:
     """Turn ``{local: {"name", "composes": [...]}}`` into ``{local: "class composed..."}``.
 
@@ -38,6 +42,16 @@ def compile_source(path: Path, cfg: ModuleSettings) -> tuple[str, dict[str, str]
     return code, flatten_exports(exports)
 
 
+def build_bundle(cfg: ModuleSettings | None = None) -> str:
+    """Compile every module and return the concatenated CSS (no files written).
+
+    Used by the dev on-demand bundle view; ``compile_all`` writes the same content.
+    """
+    cfg = cfg or get_settings()
+    parts = [_bundle_entry(key, compile_source(path, cfg)[0]) for key, path in discover_modules(cfg).items()]
+    return "\n".join(parts)
+
+
 def compile_all(cfg: ModuleSettings | None = None) -> dict:
     """Compile every discovered module, write CSS + bundle + manifest, return the manifest."""
     cfg = cfg or get_settings()
@@ -53,7 +67,7 @@ def compile_all(cfg: ModuleSettings | None = None) -> dict:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(code, encoding="utf-8")
         manifest_modules[key] = {"css": f"{cfg.output}/{key}", "exports": classes}
-        bundle_parts.append(f"/* {key} */\n{code}")
+        bundle_parts.append(_bundle_entry(key, code))
 
     bundle_code = "\n".join(bundle_parts)
     bundle_dest = out_dir / BUNDLE_NAME
