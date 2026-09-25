@@ -56,3 +56,39 @@ def test_missing_module_raises(project):
     compile_all()
     with pytest.raises(CssModuleNotFoundError):
         render('{% load cssmodules %}{% cssmodule "nope.module.css" as x %}{{ x.a }}')
+
+
+# --- {% class %} helper -------------------------------------------------
+
+
+def test_class_tag_joins_module_and_literal(project):
+    manifest = compile_all()
+    out = render(
+        "{% load cssmodules %}"
+        '{% cssmodule "card.module.css" as card %}'
+        '{% cssmodule "components/button.module.css" as button %}'
+        '<div {% class card.container button.primary "static-extra" %}></div>'
+    )
+    card = manifest["modules"]["card.module.css"]["exports"]
+    button = manifest["modules"]["components/button.module.css"]["exports"]
+    assert out == f'<div class="{card["container"]} {button["primary"]} static-extra"></div>'
+
+
+def test_class_tag_expands_composes_and_dedupes(project):
+    compile_all()
+    # card.title composes container, so it resolves to "title container"; passing
+    # card.container too would duplicate the container class -> deduped.
+    out = render('{% load cssmodules %}{% cssmodule "card.module.css" as card %}{% class card.title card.container %}')
+    classes = out.removeprefix('class="').removesuffix('"').split()
+    assert len(classes) == len(set(classes))  # no duplicates
+    assert classes[0].endswith("_title")
+
+
+def test_class_tag_drops_blanks(project):
+    compile_all()
+    out = render(
+        '{% load cssmodules %}{% cssmodule "card.module.css" as card %}{% class card.missing card.container %}'
+    )
+    # only the container class survives; the unknown local resolves to ""
+    assert out.count(" ") == 0
+    assert out.startswith('class="') and out.endswith('"')

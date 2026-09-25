@@ -13,10 +13,34 @@ Usage::
 """
 
 from django import template
+from django.utils.html import conditional_escape
+from django.utils.safestring import mark_safe
 
 from ..resolver import get_resolver
 
 register = template.Library()
+
+
+@register.simple_tag(name="class")
+def class_attr(*values):
+    """Build a ``class="..."`` attribute from any number of class references.
+
+    ``{% cssmodule "page.module.css" as page %}``
+    ``{% cssmodule "card.module.css" as card %}``
+    ``<div {% class page.bla card.pop "static-extra" %}>``
+
+    Each argument is whitespace-split, so composed classes (which resolve to
+    several names) flow through; blanks are dropped and duplicates removed while
+    preserving order.
+    """
+    seen: dict[str, None] = {}
+    for value in values:
+        if not value:
+            continue
+        for name in str(value).split():
+            seen.setdefault(name, None)
+    joined = " ".join(conditional_escape(name) for name in seen)
+    return mark_safe(f'class="{joined}"')  # names are compiled identifiers, escaped above
 
 
 @register.simple_tag
