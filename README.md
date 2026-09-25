@@ -10,9 +10,14 @@ templates — no JavaScript bundler required. Class names are transformed at bui
 
 ## How it works
 
-`*.module.css` files are compiled with Lightning CSS's CSS Modules support. A single
-compile pass produces both the transformed CSS (hashed class names) and an `exports` map
-(original name → hashed name), so the stylesheet and your templates always agree.
+Each `*.module.css` file is compiled with Lightning CSS's CSS Modules support, scoped by
+its own stable key so hashes are reproducible. A compile pass produces both the transformed
+CSS (hashed class names) and an `exports` map (original name → hashed name), so the stylesheet
+and your templates always agree. `composes` within a file is supported.
+
+The bundle (`{% cssmodules_bundle_url %}`) is built by Lightning CSS's real bundler over the
+already-compiled files (with CSS Modules off, so the hashed names are preserved): it resolves
+`@import`, dedupes, rebases `url()`, and minifies — not a naive concatenation.
 
 ```django
 {% load cssmodules %}
@@ -24,6 +29,15 @@ compile pass produces both the transformed CSS (hashed class names) and an `expo
 
 <div class="{{ card.container }}">{{ card.title }}</div>
 ```
+
+## Known limitations
+
+- **External `@import` inside a module isn't bundled yet.** If a `*.module.css` file itself
+  `@import`s a non-module stylesheet (e.g. `@import "shared.css";`), that reference is left in
+  the compiled output and the bundle step can't resolve it from the output directory. Modules
+  that don't `@import` external files bundle fine.
+- **Cross-file `composes ... from "./other.module.css"` is not supported.** Only `composes`
+  within a single file is resolved.
 
 ## Development
 

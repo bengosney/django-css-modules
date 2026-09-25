@@ -62,7 +62,8 @@ def test_bundle_css_view(dev, client):
     resp = client.get("/cssmodules/bundle.css")
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "card.module.css" in body and "components/button.module.css" in body
+    # the real bundler merges every module's scoped classes into one sheet
+    assert "_title" in body and "_container" in body and "_primary" in body
 
 
 def test_missing_module_view_404(dev, client):

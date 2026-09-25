@@ -20,10 +20,10 @@ def module_css(request, key):
         path = resolve_module(key, cfg)
     except CssModuleNotFoundError as exc:
         raise Http404(str(exc)) from exc
-    code, _ = compile_source(path, cfg)
+    code, _ = compile_source(key, path, cfg)
     return HttpResponse(code, content_type="text/css")
 
 
 def bundle_css(request):
-    """Serve every module concatenated into one stylesheet."""
+    """Serve every module bundled into one stylesheet."""
     return HttpResponse(build_bundle(), content_type="text/css")

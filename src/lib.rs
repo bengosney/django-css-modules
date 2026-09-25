@@ -1,3 +1,6 @@
+use std::path::Path;
+
+use lightningcss::bundler::{Bundler, FileProvider};
 use lightningcss::css_modules::{Config, CssModuleReference, Pattern};
 use lightningcss::stylesheet::{MinifyOptions, ParserOptions, PrinterOptions, StyleSheet};
 use lightningcss::targets::{Browsers, Targets};
@@ -11,11 +14,23 @@ fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
-/// Compile a CSS Module stylesheet.
+fn make_targets(browsers_list: Option<Vec<String>>) -> PyResult<Targets> {
+    let browsers = match browsers_list {
+        Some(list) if !list.is_empty() => Browsers::from_browserslist(list)
+            .map_err(|e| PyValueError::new_err(format!("invalid browserslist: {e}")))?,
+        _ => None,
+    };
+    Ok(Targets {
+        browsers,
+        ..Default::default()
+    })
+}
+
+/// Compile one CSS Module source to `(code, exports)`.
 ///
-/// Returns `(code, exports)` where `code` is the transformed CSS and `exports`
-/// maps each original local name to `{"name": <hashed>, "composes": [<local>, ...]}`.
-/// Cross-file `composes ... from "..."` references are skipped for now (v1.1).
+/// `filename` is used verbatim for CSS-modules hashing, so passing a stable key
+/// (rather than an absolute path) yields reproducible hashes. `exports` maps each
+/// local name to `{"name": <hashed>, "composes": [<hashed>, ...]}`.
 #[pyfunction]
 #[pyo3(signature = (css, filename, *, minify=true, browsers_list=None, pattern=None, dashed_idents=false))]
 fn compile<'py>(
@@ -27,17 +42,8 @@ fn compile<'py>(
     pattern: Option<String>,
     dashed_idents: bool,
 ) -> PyResult<(String, Bound<'py, PyDict>)> {
-    let browsers = match browsers_list {
-        Some(list) if !list.is_empty() => Browsers::from_browserslist(list)
-            .map_err(|e| PyValueError::new_err(format!("invalid browserslist: {e}")))?,
-        _ => None,
-    };
-    let targets = Targets {
-        browsers,
-        ..Default::default()
-    };
+    let targets = make_targets(browsers_list)?;
 
-    // The pattern string must outlive the parsed stylesheet, so keep it owned here.
     let pattern_str = pattern.unwrap_or_else(|| "[hash]_[local]".to_string());
     let pat = Pattern::parse(&pattern_str)
         .map_err(|e| PyValueError::new_err(format!("invalid css modules pattern: {e:?}")))?;
@@ -53,14 +59,14 @@ fn compile<'py>(
     };
 
     let mut stylesheet = StyleSheet::parse(css, parser_options)
-        .map_err(|e| PyValueError::new_err(format!("failed to parse css: {e}")))?;
+        .map_err(|e| PyValueError::new_err(format!("failed to parse {filename}: {e}")))?;
 
     stylesheet
         .minify(MinifyOptions {
             targets,
             ..Default::default()
         })
-        .map_err(|e| PyValueError::new_err(format!("failed to minify css: {e}")))?;
+        .map_err(|e| PyValueError::new_err(format!("failed to minify {filename}: {e}")))?;
 
     let result = stylesheet
         .to_css(PrinterOptions {
@@ -68,9 +74,9 @@ fn compile<'py>(
             targets,
             ..Default::default()
         })
-        .map_err(|e| PyValueError::new_err(format!("failed to print css: {e}")))?;
+        .map_err(|e| PyValueError::new_err(format!("failed to print {filename}: {e}")))?;
 
-    let exports_dict = PyDict::new(py);
+    let dict = PyDict::new(py);
     if let Some(exports) = result.exports {
         for (local, export) in exports.iter() {
             let entry = PyDict::new(py);
@@ -78,19 +84,50 @@ fn compile<'py>(
             let composes = PyList::empty(py);
             for reference in &export.composes {
                 match reference {
-                    // Same-file composes: resolve directly to the composed local name.
-                    CssModuleReference::Local { name } => composes.append(name)?,
-                    CssModuleReference::Global { name } => composes.append(name)?,
-                    // Cross-file `composes x from "./other.module.css"`: deferred to v1.1.
-                    CssModuleReference::Dependency { .. } => {}
+                    CssModuleReference::Local { name } | CssModuleReference::Global { name } => {
+                        composes.append(name)?
+                    }
+                    // Cross-file composes isn't resolved in the single-file path;
+                    // keep the referenced local name as a best-effort fallback.
+                    CssModuleReference::Dependency { name, .. } => composes.append(name)?,
                 }
             }
             entry.set_item("composes", composes)?;
-            exports_dict.set_item(local, entry)?;
+            dict.set_item(local, entry)?;
         }
     }
+    Ok((result.code, dict))
+}
 
-    Ok((result.code, exports_dict))
+/// Bundle an entry stylesheet (resolving `@import`) via Lightning CSS's bundler.
+///
+/// Intended for already-compiled per-file CSS: css-modules is OFF, so class names
+/// are preserved verbatim; the bundler only resolves `@import`, dedupes, rebases
+/// `url()`, and optimises. Returns the merged CSS.
+#[pyfunction]
+#[pyo3(signature = (entry, *, minify=true, browsers_list=None))]
+fn bundle_entry(entry: &str, minify: bool, browsers_list: Option<Vec<String>>) -> PyResult<String> {
+    let targets = make_targets(browsers_list)?;
+
+    let fs = FileProvider::new();
+    let mut bundler = Bundler::new(&fs, None, ParserOptions::default());
+    let mut stylesheet = bundler
+        .bundle(Path::new(entry))
+        .map_err(|e| PyValueError::new_err(format!("failed to bundle {entry}: {e}")))?;
+    stylesheet
+        .minify(MinifyOptions {
+            targets,
+            ..Default::default()
+        })
+        .map_err(|e| PyValueError::new_err(format!("failed to minify bundle: {e}")))?;
+    let result = stylesheet
+        .to_css(PrinterOptions {
+            minify,
+            targets,
+            ..Default::default()
+        })
+        .map_err(|e| PyValueError::new_err(format!("failed to print bundle: {e}")))?;
+    Ok(result.code)
 }
 
 /// Native extension backing lightningcss-django.
@@ -98,5 +135,6 @@ fn compile<'py>(
 fn _lightningcss_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(version, m)?)?;
     m.add_function(wrap_pyfunction!(compile, m)?)?;
+    m.add_function(wrap_pyfunction!(bundle_entry, m)?)?;
     Ok(())
 }

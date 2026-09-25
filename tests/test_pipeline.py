@@ -28,9 +28,12 @@ def test_compile_all_writes_css_bundle_and_manifest(project):
     # per-module files mirror their keys under the output dir
     assert (out_dir / "card.module.css").is_file()
     assert (out_dir / "components" / "button.module.css").is_file()
-    # bundle concatenates everything
+    # bundle (built by the real bundler) contains every module's scoped classes
     bundle = (out_dir / "bundle.css").read_text()
-    assert "card.module.css" in bundle and "components/button.module.css" in bundle
+    card = manifest["modules"]["card.module.css"]["exports"]
+    button = manifest["modules"]["components/button.module.css"]["exports"]
+    assert card["title"].split()[0] in bundle
+    assert button["primary"] in bundle
 
     assert manifest["version"] == 1
     assert manifest["bundle"] == "cssmodules/bundle.css"

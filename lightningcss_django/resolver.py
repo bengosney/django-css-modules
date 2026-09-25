@@ -65,7 +65,7 @@ class DevResolver(BaseResolver):
         mtime = path.stat().st_mtime
         hit = self._cache.get(key)
         if hit is None or hit[0] != mtime:
-            _, classes = compile_source(path, self.cfg)
+            _, classes = compile_source(key, path, self.cfg)
             self._cache[key] = (mtime, classes)
         return self._cache[key][1]
 
