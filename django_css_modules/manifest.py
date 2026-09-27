@@ -38,8 +38,8 @@ def resolve_output_root(cfg: ModuleSettings) -> Path:
     root = _first_staticfiles_dir()
     if root is None:
         raise ImproperlyConfigured(
-            "lightningcss-django needs somewhere to write compiled CSS. Set "
-            "LIGHTNINGCSS_MODULES['output_root'] or configure STATICFILES_DIRS."
+            "django-css-modules needs somewhere to write compiled CSS. Set "
+            "CSS_MODULES['output_root'] or configure STATICFILES_DIRS."
         )
     return root
 

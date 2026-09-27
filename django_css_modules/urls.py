@@ -2,7 +2,7 @@
 
 Include under any prefix, e.g.::
 
-    path("cssmodules/", include("lightningcss_django.urls")),
+    path("cssmodules/", include("django_css_modules.urls")),
 
 Only needed when serving compiled CSS on demand (typically ``DEBUG``); production
 serves the prebuilt files from ``compilecssmodules`` as static assets.
@@ -12,7 +12,7 @@ from django.urls import path
 
 from . import views
 
-app_name = "lightningcss_django"
+app_name = "django_css_modules"
 
 urlpatterns = [
     # bundle.css must precede the catch-all so it isn't swallowed by <path:key>.

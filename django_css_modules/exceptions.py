@@ -1,8 +1,8 @@
-"""Exceptions raised by lightningcss-django."""
+"""Exceptions raised by django-css-modules."""
 
 
 class CssModuleError(Exception):
-    """Base class for all lightningcss-django errors."""
+    """Base class for all django-css-modules errors."""
 
 
 class CssModuleNotFoundError(CssModuleError, KeyError):

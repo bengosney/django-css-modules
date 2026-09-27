@@ -6,11 +6,11 @@ and hand the results over — no separate ``compilecssmodules`` step needed::
     STATICFILES_FINDERS = [
         "django.contrib.staticfiles.finders.FileSystemFinder",
         "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-        "lightningcss_django.finders.CssModulesFinder",
+        "django_css_modules.finders.CssModulesFinder",
     ]
 
 The compiled output must live OUTSIDE ``STATICFILES_DIRS`` (set
-``LIGHTNINGCSS_MODULES['output_root']`` to a build dir), otherwise both
+``CSS_MODULES['output_root']`` to a build dir), otherwise both
 ``FileSystemFinder`` and this finder report the files and they get collected twice.
 """
 
@@ -78,10 +78,10 @@ class CssModulesFinder(BaseFinder):
             if out_root == base or base in out_root.parents:
                 errors.append(
                     CheckWarning(
-                        "LIGHTNINGCSS_MODULES['output_root'] is inside STATICFILES_DIRS, so "
+                        "CSS_MODULES['output_root'] is inside STATICFILES_DIRS, so "
                         "compiled files will be collected twice. Point output_root at a build "
                         "directory outside STATICFILES_DIRS when using CssModulesFinder.",
-                        id="lightningcss_django.W001",
+                        id="django_css_modules.W001",
                     )
                 )
         return errors

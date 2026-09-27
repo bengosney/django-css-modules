@@ -16,7 +16,7 @@ from .discovery import resolve_module
 from .exceptions import CssModuleNotFoundError
 from .manifest import load_manifest
 
-URL_NAMESPACE = "lightningcss_django"
+URL_NAMESPACE = "django_css_modules"
 
 
 class BaseResolver:

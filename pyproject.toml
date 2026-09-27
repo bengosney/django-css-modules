@@ -3,7 +3,7 @@ build-backend = "maturin"
 requires = [ "maturin>=1.7,<2" ]
 
 [project]
-name = "lightningcss-django"
+name = "django-css-modules"
 version = "0.0.1"
 description = "CSS Modules for Django templates, powered by Lightning CSS"
 readme = "README.md"
@@ -19,7 +19,7 @@ optional-dependencies.dev = [ "icecream", "maturin>=1.7", "pre-commit", "ruff" ]
 optional-dependencies.test = [ "pytest", "pytest-django" ]
 
 [tool.maturin]
-module-name = "lightningcss_django._lightningcss_rs"
+module-name = "django_css_modules._lightningcss_rs"
 python-source = "."
 features = [ "pyo3/extension-module" ]
 

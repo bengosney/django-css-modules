@@ -130,7 +130,7 @@ fn bundle_entry(entry: &str, minify: bool, browsers_list: Option<Vec<String>>) -
     Ok(result.code)
 }
 
-/// Native extension backing lightningcss-django.
+/// Native extension backing django-css-modules.
 #[pymodule]
 fn _lightningcss_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(version, m)?)?;

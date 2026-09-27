@@ -3,8 +3,8 @@
 import pytest
 from django.template import Context, Template
 
-from lightningcss_django.compiler import compile_all
-from lightningcss_django.exceptions import CssModuleNotFoundError
+from django_css_modules.compiler import compile_all
+from django_css_modules.exceptions import CssModuleNotFoundError
 
 
 def render(source: str, **context) -> str:

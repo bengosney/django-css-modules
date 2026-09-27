@@ -2,10 +2,10 @@
 
 import pytest
 
-from lightningcss_django.compiler import compile_all, flatten_exports
-from lightningcss_django.exceptions import CssModuleNotFoundError
-from lightningcss_django.manifest import load_manifest, resolve_manifest_path, resolve_output_dir
-from lightningcss_django.resolver import DevResolver, ManifestResolver, get_resolver
+from django_css_modules.compiler import compile_all, flatten_exports
+from django_css_modules.exceptions import CssModuleNotFoundError
+from django_css_modules.manifest import load_manifest, resolve_manifest_path, resolve_output_dir
+from django_css_modules.resolver import DevResolver, ManifestResolver, get_resolver
 
 # --- flatten ------------------------------------------------------------
 

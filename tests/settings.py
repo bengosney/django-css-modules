@@ -5,7 +5,7 @@ SECRET_KEY = "test-only-not-secret"
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
-    "lightningcss_django",
+    "django_css_modules",
 ]
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}

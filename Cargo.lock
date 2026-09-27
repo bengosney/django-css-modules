@@ -264,6 +264,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "django-css-modules"
+version = "0.0.1"
+dependencies = [
+ "lightningcss",
+ "pyo3",
+]
+
+[[package]]
 name = "dtoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -504,14 +512,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "lightningcss-django"
-version = "0.0.1"
-dependencies = [
- "lightningcss",
- "pyo3",
 ]
 
 [[package]]

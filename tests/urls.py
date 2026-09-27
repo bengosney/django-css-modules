@@ -3,5 +3,5 @@
 from django.urls import include, path
 
 urlpatterns = [
-    path("cssmodules/", include("lightningcss_django.urls")),
+    path("cssmodules/", include("django_css_modules.urls")),
 ]

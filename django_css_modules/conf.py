@@ -1,4 +1,4 @@
-"""Reading and validating the ``LIGHTNINGCSS_MODULES`` Django setting."""
+"""Reading and validating the ``CSS_MODULES`` Django setting."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
-SETTING_NAME = "LIGHTNINGCSS_MODULES"
+SETTING_NAME = "CSS_MODULES"
 
 DEFAULT_SUFFIX = ".module.css"
 

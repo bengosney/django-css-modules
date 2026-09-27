@@ -6,8 +6,8 @@ import pytest
 from django.core.management import call_command
 from django.template import Context, Template
 
-from lightningcss_django.manifest import resolve_manifest_path, resolve_output_dir
-from lightningcss_django.resolver import DevResolver, get_resolver
+from django_css_modules.manifest import resolve_manifest_path, resolve_output_dir
+from django_css_modules.resolver import DevResolver, get_resolver
 
 
 # --- management command -------------------------------------------------
@@ -28,9 +28,9 @@ def test_command_reports_compile_error(project, settings):
     # A pattern the native layer rejects surfaces as a CommandError.
     from django.core.management.base import CommandError
 
-    cfg = dict(settings.LIGHTNINGCSS_MODULES)
+    cfg = dict(settings.CSS_MODULES)
     cfg["pattern"] = "[not_a_real_segment]"
-    settings.LIGHTNINGCSS_MODULES = cfg
+    settings.CSS_MODULES = cfg
     with pytest.raises(CommandError):
         call_command("compilecssmodules")
 

@@ -14,7 +14,7 @@ def project(settings, tmp_path):
     (src / "card.module.css").write_text(CARD)
     (src / "components" / "button.module.css").write_text(BUTTON)
     settings.STATIC_URL = "/static/"
-    settings.LIGHTNINGCSS_MODULES = {
+    settings.CSS_MODULES = {
         "dirs": [src],
         "output_root": tmp_path / "static",
         "minify": False,

@@ -2,7 +2,7 @@
 
 import pytest
 
-from lightningcss_django import _lightningcss_rs as rs
+from django_css_modules import _lightningcss_rs as rs
 
 CSS = """
 .container { padding: 1rem; }

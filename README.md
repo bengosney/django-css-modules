@@ -1,4 +1,4 @@
-# lightningcss-django
+# django-css-modules
 
 CSS Modules for Django templates, powered by [Lightning CSS](https://lightningcss.dev/).
 
@@ -41,9 +41,9 @@ Two options:
   STATICFILES_FINDERS = [
       "django.contrib.staticfiles.finders.FileSystemFinder",
       "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-      "lightningcss_django.finders.CssModulesFinder",
+      "django_css_modules.finders.CssModulesFinder",
   ]
-  LIGHTNINGCSS_MODULES = {"dirs": [...], "output_root": BASE_DIR / ".lightningcss_build"}
+  CSS_MODULES = {"dirs": [...], "output_root": BASE_DIR / ".css_modules_build"}
   ```
 
   Then `manage.py collectstatic` compiles the modules and collects them in one step.
@@ -57,20 +57,20 @@ time it's read from the filesystem (the collected `STATIC_ROOT` copy, or the bui
 `DEBUG`, CSS is compiled on demand — no build step needed.
 
 Minification defaults to on in production and off under `DEBUG` (readable output). Override it
-explicitly with `LIGHTNINGCSS_MODULES = {..., "minify": True/False}`.
+explicitly with `CSS_MODULES = {..., "minify": True/False}`.
 
 ## Configuration
 
-All settings live in the `LIGHTNINGCSS_MODULES` dict. At least one of `dirs` or `app_dirs`
+All settings live in the `CSS_MODULES` dict. At least one of `dirs` or `app_dirs`
 is required.
 
 ```python
-LIGHTNINGCSS_MODULES = {
+CSS_MODULES = {
     "dirs": [BASE_DIR / "assets"],  # at least one of dirs / app_dirs
     "app_dirs": ["static"],  # sub-dirs scanned inside every installed app
     "suffix": ".module.css",
     "output": "cssmodules",
-    "output_root": BASE_DIR / ".lightningcss_build",
+    "output_root": BASE_DIR / ".css_modules_build",
     "minify": None,  # None = on in prod, off under DEBUG
     "targets": [">= 0.25%"],
     "pattern": "[hash]_[local]",

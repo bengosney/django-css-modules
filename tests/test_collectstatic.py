@@ -4,15 +4,15 @@ from io import StringIO
 
 from django.core.management import call_command
 
-from lightningcss_django.manifest import resolve_manifest_path
-from lightningcss_django.resolver import get_resolver
+from django_css_modules.manifest import resolve_manifest_path
+from django_css_modules.resolver import get_resolver
 
 CARD = ".container { padding: 1rem; }\n.title { composes: container; font-weight: bold; }\n"
 
 FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "lightningcss_django.finders.CssModulesFinder",
+    "django_css_modules.finders.CssModulesFinder",
 ]
 
 
@@ -27,7 +27,7 @@ def test_compilecssmodules_then_collectstatic(settings, tmp_path):
     settings.STATIC_URL = "/static/"
     settings.STATIC_ROOT = str(static_root)
     settings.STATICFILES_DIRS = [str(static_src)]
-    settings.LIGHTNINGCSS_MODULES = {"dirs": [src]}  # output_root defaults to STATICFILES_DIRS[0]
+    settings.CSS_MODULES = {"dirs": [src]}  # output_root defaults to STATICFILES_DIRS[0]
 
     # 1. build
     call_command("compilecssmodules", stdout=StringIO())
@@ -60,7 +60,7 @@ def test_works_with_manifest_static_files_storage(settings, tmp_path):
         **settings.STORAGES,
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"},
     }
-    settings.LIGHTNINGCSS_MODULES = {"dirs": [src]}
+    settings.CSS_MODULES = {"dirs": [src]}
 
     call_command("compilecssmodules", stdout=StringIO())
     call_command("collectstatic", interactive=False, verbosity=0)
@@ -87,7 +87,7 @@ def test_finder_makes_collectstatic_compile(settings, tmp_path):
     settings.STATIC_ROOT = str(tmp_path / "collected")
     settings.STATICFILES_DIRS = []
     settings.STATICFILES_FINDERS = FINDERS
-    settings.LIGHTNINGCSS_MODULES = {
+    settings.CSS_MODULES = {
         "dirs": [src],
         "output_root": str(tmp_path / "build"),  # outside STATICFILES_DIRS
     }
@@ -109,7 +109,7 @@ def test_finder_find_locates_compiled_file(settings, tmp_path):
 
     settings.STATICFILES_DIRS = []
     settings.STATICFILES_FINDERS = FINDERS
-    settings.LIGHTNINGCSS_MODULES = {"dirs": [src], "output_root": str(tmp_path / "build")}
+    settings.CSS_MODULES = {"dirs": [src], "output_root": str(tmp_path / "build")}
 
     found = finders.find("cssmodules/card.module.css")
     assert found is not None
