@@ -6,7 +6,40 @@ Scope your CSS class names per file and reference the hashed names directly from
 templates — no JavaScript bundler required. Class names are transformed at build time
 (with a dev fallback that compiles on demand).
 
-> Status: early development. See the build plan in the project notes.
+> Status: early development (0.x). The API and settings may change between releases.
+
+## Installation
+
+```bash
+pip install django-css-modules
+```
+
+Requires Python 3.14+ and Django 5.2+. Prebuilt wheels are published for Linux, macOS and
+Windows, so no Rust toolchain is needed to install.
+
+Add the app and tell it where your `*.module.css` files live:
+
+```python
+INSTALLED_APPS = [
+    ...,
+    "django.contrib.staticfiles",
+    "django_css_modules",
+]
+
+CSS_MODULES = {"dirs": [BASE_DIR / "assets"]}
+```
+
+In `DEBUG`, CSS is compiled on demand and served by a small view, so include its URLs:
+
+```python
+from django.conf import settings
+from django.urls import include, path
+
+urlpatterns = [...]
+
+if settings.DEBUG:
+    urlpatterns += [path("cssmodules/", include("django_css_modules.urls"))]
+```
 
 ## How it works
 
@@ -108,5 +141,5 @@ Requires [uv](https://github.com/astral-sh/uv) and a Rust toolchain.
 ```bash
 make init        # set up .venv, install deps, git hooks
 make develop     # build the Rust extension into the venv
-make test
+pytest
 ```
