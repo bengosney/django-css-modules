@@ -1,15 +1,20 @@
 [build-system]
 build-backend = "maturin"
-requires = [ "maturin>=1.7,<2" ]
+requires = [ "maturin>=1.9,<2" ]
 
 [project]
 name = "django-css-modules"
 version = "0.0.1"
 description = "CSS Modules for Django templates, powered by Lightning CSS"
 readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = [ "LICENSE" ]
 authors = [ { name = "Ben Gosney", email = "bengosney@googlemail.com" } ]
 requires-python = ">=3.14"
 classifiers = [
+  "Framework :: Django",
+  "Framework :: Django :: 5.2",
+  "Framework :: Django :: 6.0",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.15",
@@ -17,6 +22,8 @@ classifiers = [
 dependencies = [ "django>=4.2" ]
 optional-dependencies.dev = [ "icecream", "maturin>=1.7", "pre-commit", "ruff" ]
 optional-dependencies.test = [ "pytest", "pytest-django" ]
+urls.Homepage = "https://github.com/bengosney/django-css-modules"
+urls.Issues = "https://github.com/bengosney/django-css-modules/issues"
 
 [tool.maturin]
 module-name = "django_css_modules._lightningcss_rs"
